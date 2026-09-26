@@ -1,6 +1,6 @@
 // goroutines
 ## what i thought initially
- Adding go keyword before a function will make it run background and the program will continue running while that goroutine is executing.
+ Adding go keyword before a function will start a new goroutine and  make it run background and the program will continue running while that goroutine is executing.
 
 ## what actually happened 
 I wrote: 
@@ -20,6 +20,6 @@ it does not mean that it will wait for the function to get finish
 or
 keep the parent function alive until it gets complete 
 ## solution
-i need to make main() synchronize by adding sync.WaitGroup so that main can wait for other go routines to finish 
+i need to make main() synchronize , one way is to use sync.WaitGroup so that main can wait for other go routines to finish 
  
 i will add nxt.
