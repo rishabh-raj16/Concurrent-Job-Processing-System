@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"sync"
-	"time"
+	// "time"
 )
 
 type Job struct {
@@ -12,20 +12,22 @@ type Job struct {
 }
 
 func main() {
-	// learn importance of channel
 	jobs := make(chan Job, 100)
+	completedJob:=0
+
 	var wg sync.WaitGroup
+	var mu sync.Mutex
 	for i:=1;i<3;i++{
 		// when u put go key words  before any task make it goroutine 
 		// which executes asynchronously (in the background) 
 		// start worker
 		
-		go worker(i,jobs,&wg)
+		go worker(i,jobs,&wg, &completedJob, &mu)
 		
 		
 	}
 	// adding jobs to channel
-		for i:=1;i<20;i++{
+		for i:=1;i<100;i++{
 			wg.Add(1)
 			jobs <- Job{
 				Id: i,
@@ -37,29 +39,34 @@ func main() {
 
 		// keep main alive temporarily
 		wg.Wait()
-		fmt.Println("All jobs completed")
+		// fmt.Println("All jobs completed")
+		fmt.Println("Completed jobs:", completedJob)
 
 }
 
 // what is this <-chan
-func worker(id int, jobs <-chan Job, wg *sync.WaitGroup) {
+func worker(id int, jobs <-chan Job, wg *sync.WaitGroup , completedJob *int, mu *sync.Mutex) {
 	
-	// for job := range jobs 
-	for
-	{
-		job,ok:=<- jobs
-		fmt.Println("job",job,"ok",ok)
+	for job := range jobs {
+	// for
+	// {
+	// 	job,ok:=<- jobs
+	// 	fmt.Println("job",job,"ok",ok)
 
-		if !ok{
-			fmt.Println("worker",id,"channel closed")
-			return
-		}
+	// 	if !ok{
+	// 		fmt.Println("worker",id,"channel closed")
+	// 		return
+	// 	}
 		
-		// lean fmt vs log package
 		fmt.Println("worker", id, "processing", job.Id)
 		// this time.sleep is to wait for two sec so it does not finish immediately
-		  time.Sleep(2 * time.Second)
+		//   time.Sleep(1 * time.Second)
 		fmt.Println("worker",id,"finished",job.Id)
+
+		mu.Lock()
+
+		(*completedJob)++
+		mu.Unlock()
 		wg.Done()
 	}
 }
