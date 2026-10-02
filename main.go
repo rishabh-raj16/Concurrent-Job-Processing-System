@@ -3,7 +3,8 @@ package main
 import (
 	"fmt"
 	"sync"
-	"time"
+	"sync/atomic"
+	// "time"
 )
 
 type Job struct {
@@ -13,16 +14,18 @@ type Job struct {
 
 func main() {
 	jobs := make(chan Job, 100)
-	completedJob:=0
+	// completedJob:=0
 
 	var wg sync.WaitGroup
-	var mu sync.RWMutex
+	var completedJob atomic.Int32 
+	// var mu sync.RWMutex
 	for i:=1;i<6;i++{
 		// when u put go key words  before any task make it goroutine 
 		// which executes asynchronously (in the background) 
 		// start worker
 		
-		go worker(i,jobs,&wg, &completedJob, &mu)
+		// go worker(i,jobs,&wg, &completedJob, &mu)
+		go worker(i,jobs,&wg, &completedJob)
 		
 		
 	}
@@ -40,12 +43,12 @@ func main() {
 		// keep main alive temporarily
 		wg.Wait()
 		// fmt.Println("All jobs completed")
-		fmt.Println("Completed jobs:", completedJob)
+		fmt.Println("Completed jobs:", completedJob.Load())
 
 }
 
 // what is this <-chan
-func worker(id int, jobs <-chan Job, wg *sync.WaitGroup , completedJob *int, mu *sync.RWMutex) {
+func worker(id int, jobs <-chan Job, wg *sync.WaitGroup , completedJob *atomic.Int32 , ) {
 	
 	for job := range jobs {
 	// for
@@ -59,31 +62,31 @@ func worker(id int, jobs <-chan Job, wg *sync.WaitGroup , completedJob *int, mu 
 	// 	}
 
 
-		mu.RLock()
+		// mu.RLock()
 
-		fmt.Println("Read start worker", job.Status, "", job.Id , "completed jobs", *completedJob)
-		  time.Sleep(2 * time.Second)
+		fmt.Println("Read start worker", job.Status, "", job.Id , "completed jobs", completedJob.Load())
+		//   time.Sleep(2 * time.Second)
 		  fmt.Println("read end",id)
 
 		// mu.RUnlock()
 		// this time.sleep is to wait for two sec so it does not finish immediately
 		//   time.Sleep(1 * time.Second)
-		mu.RUnlock()
+		// mu.RUnlock()
 
-		
+		completedJob.Add(1)
 
-		mu.Lock()
-		fmt.Println("Write worker", id, "acquire for processing", job.Id)
-		job.Status="Completed"
-		//   time.Sleep(1 * time.Second)
-
-
-
-		(*completedJob)++
-		mu.Unlock()
+		// increment(completedJob, mu)
 		// mu.RLock()
 		// fmt.Println("Read worker", job.Status, "", job.Id , "completed jobs", *completedJob)
 		// mu.RUnlock()
 		wg.Done()
 	}
+
+	
 }
+
+func increment (completedJob *int, mu *sync.RWMutex){
+		mu.Lock()
+		defer mu.Unlock()
+		*completedJob++
+	}
